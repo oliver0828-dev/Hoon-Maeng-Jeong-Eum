@@ -19,6 +19,8 @@ extension UIFont {
 
 @main
 struct Braille_Read_1App: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     private let mainBackgroundColor = Color.black
     private let inkColor = Color(red: 1.0, green: 0.88, blue: 0.0)
     private let themeInkColor = Color(red: 1.0, green: 0.88, blue: 0.0)

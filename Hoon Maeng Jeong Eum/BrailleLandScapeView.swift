@@ -308,7 +308,7 @@ struct BrailleLandscapeView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
-            setOrientation(.landscapeRight)
+            OrientationManager.rotateToLandscape()
             let savedIndex = UserDefaults.standard.integer(forKey: progressKey)
             let savedJamo = UserDefaults.standard.integer(forKey: jamoProgressKey)
             let newIndex = letters.indices.contains(savedIndex) ? savedIndex : 0
@@ -330,7 +330,7 @@ struct BrailleLandscapeView: View {
         }
         .onDisappear {
             BrailleSpeechManager.shared.stop()
-            setOrientation(.portrait)
+            OrientationManager.rotateToPortrait()
             UserDefaults.standard.set(currentIndex, forKey: progressKey)
             UserDefaults.standard.set(currentJamoIndex, forKey: jamoProgressKey)
         }
@@ -506,12 +506,6 @@ struct BrailleLandscapeView: View {
             } else if previousDot != nil {
                 HapticManager.instance.triggerBoundaryHaptic()
             }
-        }
-    }
-
-    private func setOrientation(_ orientation: UIInterfaceOrientationMask) {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientation))
         }
     }
 }
