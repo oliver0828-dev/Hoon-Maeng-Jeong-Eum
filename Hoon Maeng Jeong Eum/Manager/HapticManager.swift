@@ -13,22 +13,39 @@ import SwiftUI
 class HapticManager {
     static let instance = HapticManager()
     
-    private let impactLight = UIImpactFeedbackGenerator(style: .light)
+    private let impactSoft = UIImpactFeedbackGenerator(style: .soft)
     private let impactMed = UIImpactFeedbackGenerator(style: .medium)
     private let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
+    private let impactRigid = UIImpactFeedbackGenerator(style: .rigid)
+    private let selectionGenerator = UISelectionFeedbackGenerator()
+    private let notificationGenerator = UINotificationFeedbackGenerator()
     
     func triggerActiveHaptic() {
         impactHeavy.prepare()
-        impactHeavy.impactOccurred()
+        impactRigid.prepare()
+        impactHeavy.impactOccurred(intensity: 1.0)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.055) { [weak self] in
+            self?.impactRigid.impactOccurred(intensity: 0.9)
+        }
     }
     
     func triggerInactiveHaptic() {
-        impactLight.prepare()
-        impactLight.impactOccurred(intensity: 0.5)
+        impactSoft.prepare()
+        impactSoft.impactOccurred(intensity: 0.35)
     }
     
     func triggerTransitionHaptic() {
         impactMed.prepare()
-        impactMed.impactOccurred(intensity: 0.4)
+        impactMed.impactOccurred(intensity: 0.7)
+    }
+    
+    func triggerBoundaryHaptic() {
+        selectionGenerator.prepare()
+        selectionGenerator.selectionChanged()
+    }
+    
+    func triggerCompletionHaptic() {
+        notificationGenerator.prepare()
+        notificationGenerator.notificationOccurred(.success)
     }
 }

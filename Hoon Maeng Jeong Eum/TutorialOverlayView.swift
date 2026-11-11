@@ -20,74 +20,64 @@ extension TutorialStep {
         case .jeongja:
             return TutorialStep(
                 systemImage: "text.book.closed.fill",
-                title: "Welcome to Grade 1 Braille",
-                description: "Learn Korean braille from scratch. Starting with individual consonants and vowels, you'll build up to full syllables and words — one dot at a time."
+                title: "1급 점자에 오신 것을 환영합니다",
+                description: "한글 점자를 기초부터 배워 보세요. 자음과 모음 하나하나부터 시작해 음절과 단어까지, 점 하나씩 차근차근 익힐 수 있습니다."
             )
         case .yakja:
             return TutorialStep(
                 systemImage: "books.vertical.fill",
-                title: "Welcome to Grade 2 Braille",
-                description: "Take your braille further with abbreviated Korean. Grade 2 uses shorthand symbols that compress common syllables and words into fewer cells for faster reading."
+                title: "2급 점자에 오신 것을 환영합니다",
+                description: "한글 약자로 점자 실력을 한 단계 높여 보세요. 2급에서는 자주 쓰는 음절과 단어를 더 적은 칸으로 줄인 약자를 익혀 더욱 빠르게 읽을 수 있습니다."
             )
         }
     }
 
     static let voiceOverTip = TutorialStep(
         systemImage: "hand.tap.fill",
-        title: "VoiceOver & Touch Tips",
-        description: "If you use VoiceOver, double-tap any button to activate it. For the braille dot grid, simply touch or drag with one finger — it responds directly without needing a double-tap."
+        title: "VoiceOver 및 제스처 안내",
+        description: "점자 촉각 영역은 두 번 탭할 필요 없이 한 손가락으로 문지르면 각 점의 번호와 돌출 여부를 음성과 진동으로 알려 줍니다. 다른 글자로 이동할 때는 좌우로 스와이프하거나 VoiceOver에서 위아래로 쓸어내리세요."
     )
 
     static let settingsStep = TutorialStep(
         systemImage: "slider.horizontal.3",
-        title: "Personalize Your Experience",
-        description: "Set up how the app communicates with you before you begin. You can also change these anytime in Settings.",
+        title: "나에게 맞게 설정하기",
+        description: "시작하기 전에 앱의 음성 안내 방식을 설정하세요. 이 항목은 언제든지 설정 탭에서 변경할 수 있습니다.",
         isSettingsStep: true
     )
 
     static let portraitTutorial: [TutorialStep] = [
         TutorialStep(
-            systemImage: "chart.bar.fill",
-            title: "Track Your Progress",
-            description: "The counter at the top shows your position (e.g., 2 / 15). The blue bar fills as you advance through the level."
-        ),
-        TutorialStep(
             systemImage: "speaker.wave.3.fill",
-            title: "Hear the Letter",
-            description: "Tap the speaker icon to hear the Korean letter name and its braille dot numbers read aloud."
+            title: "글자 정보와 다시 듣기",
+            description: "상단 카드에는 현재 한글 글자, 점자 번호, 학습 진도가 표시됩니다. 상단이나 하단 영역을 탭하면 언제든 글자와 점자 번호 음성을 다시 들을 수 있습니다."
         ),
         TutorialStep(
             systemImage: "hand.draw.fill",
-            title: "Explore the Dots",
-            description: "Drag your finger across the dot grid. Yellow raised dots vibrate and play a sound. The number on each dot shows its position in the braille cell."
+            title: "점자 만지고 위치 듣기",
+            description: "중앙의 큰 점자 영역 위에서 손가락을 움직여 보세요. 돌출된 노란 점은 강한 진동과 함께 '1번'처럼 번호를 알려 주고, 빈 점은 약한 진동과 함께 '2번 빈 점'이라고 알려 주어 위치를 쉽게 파악할 수 있습니다."
         ),
         TutorialStep(
-            systemImage: "arrow.left.arrow.right",
-            title: "Navigate Letters",
-            description: "Use ← → arrows to move between letters. The letter name shows in the center. On the last letter, the right arrow becomes ✓ to complete the level."
+            systemImage: "hand.point.left.fill",
+            title: "스와이프로 다음 점자 보기",
+            description: "상단 카드나 하단 안내 바를 왼쪽으로 스와이프하면 다음 점자로, 오른쪽으로 스와이프하면 이전 점자로 이동하며 자동으로 음성이 재생됩니다."
         )
     ]
 
     static let landscapeTutorial: [TutorialStep] = [
         TutorialStep(
             systemImage: "sidebar.left",
-            title: "Letter Info Panel",
-            description: "The left panel shows the Korean letter, its English name, and which cell you're on (e.g., Page 1 of 2). Active braille dot numbers are listed below."
+            title: "글자 정보와 다시 듣기",
+            description: "왼쪽 카드에는 한글 글자, 현재 점자 칸 위치(예: 2칸 중 1칸), 활성화된 점자 번호가 표시됩니다. 왼쪽 카드를 탭하면 언제든 음성을 다시 들을 수 있습니다."
         ),
         TutorialStep(
             systemImage: "hand.draw.fill",
-            title: "Explore the Dots",
-            description: "Drag your finger over the dot grid on the right. Yellow raised dots vibrate and play a sound. Some letters span multiple cells — navigate with the arrows."
+            title: "점자 만지고 위치 듣기",
+            description: "오른쪽 점자 영역 위에서 손가락을 문질러 보세요. 1번부터 6번 점의 위치와 돌출 여부를 강한 진동·약한 진동과 음성으로 즉시 알려 줍니다."
         ),
         TutorialStep(
-            systemImage: "arrow.left.arrow.right",
-            title: "Navigate Cells & Letters",
-            description: "Use ← → arrows to move through cells within a letter, then advance to the next letter. On the last cell, the right arrow becomes ✓ to complete the level."
-        ),
-        TutorialStep(
-            systemImage: "xmark.circle.fill",
-            title: "Exit & Track Progress",
-            description: "Tap the X in the top left to exit the level anytime. The progress bar at the bottom left tracks your position through all cells."
+            systemImage: "hand.point.left.fill",
+            title: "스와이프로 칸과 글자 이동하기",
+            description: "왼쪽이나 하단 영역을 좌우로 스와이프하면 한 글자 안의 다음 점자 칸과 다음 글자로 순서대로 이동하며, 이동할 때마다 음성이 계속 안내됩니다."
         )
     ]
 }
@@ -119,23 +109,23 @@ struct TutorialIntroView: View {
                 // Header row
                 HStack {
                     if currentStep == 0 {
-                        Button("Skip") {
+                        Button("건너뛰기") {
                             onBegin()
                         }
                         .font(.system(size: 16, weight: .medium, design: .rounded))
                         .foregroundStyle(inkColor.opacity(0.45))
-                        .accessibilityLabel("Skip tutorial")
-                        .accessibilityHint("Skip the tutorial and begin the lesson")
+                        .koreanAccessibilityLabel("사용 안내 건너뛰기")
+                        .koreanAccessibilityHint("사용 안내를 건너뛰고 학습을 시작합니다")
                     } else {
                         Color.clear.frame(width: 44, height: 20)
                     }
 
                     Spacer()
 
-                    Text("\(currentStep + 1) of \(steps.count)")
+                    koreanText("\(steps.count)단계 중 \(currentStep + 1)단계")
                         .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundStyle(inkColor.opacity(0.35))
-                        .accessibilityLabel("Step \(currentStep + 1) of \(steps.count)")
+                        .koreanAccessibilityLabel("\(steps.count)단계 중 \(currentStep + 1)단계")
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 24)
@@ -151,12 +141,12 @@ struct TutorialIntroView: View {
                         .accessibilityHidden(true)
 
                     VStack(spacing: 12) {
-                        Text(step.title)
+                        koreanText(step.title)
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundStyle(inkColor)
                             .multilineTextAlignment(.center)
 
-                        Text(step.description)
+                        koreanText(step.description)
                             .font(.system(size: 16, weight: .regular, design: .rounded))
                             .foregroundStyle(inkColor.opacity(0.7))
                             .multilineTextAlignment(.center)
@@ -170,14 +160,14 @@ struct TutorialIntroView: View {
                         VStack(spacing: 12) {
                             settingToggleRow(
                                 icon: "speaker.wave.2.fill",
-                                label: "Auto-Read Letters",
-                                hint: "Speaks the letter name and braille numbers aloud when you move to a new letter",
+                                label: "글자 자동 읽기",
+                                hint: "새 글자로 이동하면 글자 이름과 점자 번호를 소리 내어 읽습니다",
                                 isOn: $autoAnnounce
                             )
                             settingToggleRow(
                                 icon: "waveform",
-                                label: "Dot Sound",
-                                hint: "Plays a tone when your finger touches an active braille dot",
+                                label: "점 위치 음성 안내",
+                                hint: "손가락이 점자 점에 닿으면 몇 번 점인지 음성으로 알려 줍니다",
                                 isOn: $activeBrailleSound
                             )
                         }
@@ -208,7 +198,7 @@ struct TutorialIntroView: View {
                             Button {
                                 goBack()
                             } label: {
-                                Text("← Back")
+                                koreanText("← 이전")
                                     .font(.system(size: 19, weight: .semibold, design: .rounded))
                                     .foregroundStyle(inkColor.opacity(0.7))
                                     .frame(maxWidth: .infinity)
@@ -216,13 +206,18 @@ struct TutorialIntroView: View {
                                     .background(inkColor.opacity(0.09))
                                     .clipShape(Capsule())
                             }
-                            .accessibilityLabel("Back")
-                            .accessibilityHint("Go to the previous tutorial step")
+                            .koreanAccessibilityLabel("이전")
+                            .koreanAccessibilityHint("이전 사용 안내 단계로 이동합니다")
 
                             Button {
-                                if isLastStep { onBegin() } else { advanceStep() }
+                                if isLastStep {
+                                    BrailleSpeechManager.shared.stop()
+                                    onBegin()
+                                } else {
+                                    advanceStep()
+                                }
                             } label: {
-                                Text(isLastStep ? "Begin Lesson" : "Next →")
+                                koreanText(isLastStep ? "학습 시작" : "다음 →")
                                     .font(.system(size: 19, weight: .bold, design: .rounded))
                                     .foregroundStyle(.black)
                                     .frame(maxWidth: .infinity)
@@ -230,33 +225,54 @@ struct TutorialIntroView: View {
                                     .background(themeInkColor)
                                     .clipShape(Capsule())
                             }
-                            .accessibilityLabel(isLastStep ? "Begin Lesson" : "Next")
-                            .accessibilityHint(isLastStep ? "Start the lesson" : "Go to step \(currentStep + 2) of \(steps.count)")
+                            .koreanAccessibilityLabel(isLastStep ? "학습 시작" : "다음")
+                            .koreanAccessibilityHint(isLastStep ? "학습을 시작합니다" : "\(steps.count)단계 중 \(currentStep + 2)단계로 이동합니다")
                         }
                     } else {
                         Button {
-                            if isLastStep { onBegin() } else { advanceStep() }
+                            if isLastStep {
+                                BrailleSpeechManager.shared.stop()
+                                onBegin()
+                            } else {
+                                advanceStep()
+                            }
                         } label: {
-                            Text(isLastStep ? "Begin Lesson" : "Next →")
+                            koreanText(isLastStep ? "학습 시작" : "다음 →")
                                 .font(.system(size: 19, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.black)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 60)
                                 .background(themeInkColor)
                                 .clipShape(Capsule())
                         }
-                        .accessibilityLabel(isLastStep ? "Begin Lesson" : "Next")
-                        .accessibilityHint(isLastStep ? "Start the lesson" : "Go to step \(currentStep + 2) of \(steps.count)")
+                        .koreanAccessibilityLabel(isLastStep ? "학습 시작" : "다음")
+                        .koreanAccessibilityHint(isLastStep ? "학습을 시작합니다" : "\(steps.count)단계 중 \(currentStep + 2)단계로 이동합니다")
                     }
                 }
                 .padding(.horizontal, 28)
                 .padding(.bottom, 40)
             }
         }
+        .gesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    let horizontal = value.translation.width
+                    let vertical = value.translation.height
+                    guard abs(horizontal) > abs(vertical), abs(horizontal) > 40 else { return }
+                    if horizontal < 0 {
+                        if isLastStep {
+                            BrailleSpeechManager.shared.stop()
+                            onBegin()
+                        } else {
+                            advanceStep()
+                        }
+                    } else {
+                        goBack()
+                    }
+                }
+        )
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                announceStep()
-            }
+            announceStep(delay: 0.45)
         }
     }
 
@@ -272,7 +288,7 @@ struct TutorialIntroView: View {
                     .frame(width: 28)
                     .accessibilityHidden(true)
 
-                Text(label)
+                koreanText(label)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundStyle(inkColor)
             }
@@ -284,18 +300,18 @@ struct TutorialIntroView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(cardPaperColor)
         )
-        .accessibilityHint(hint)
+        .koreanAccessibilityHint(hint)
     }
 
-    // MARK: - VoiceOver announcement
+    // MARK: - Voice & VoiceOver announcement
 
-    private func announceStep() {
-        guard UIAccessibility.isVoiceOverRunning else { return }
-        var text = "\(step.title). \(step.description)"
+    private func announceStep(delay: TimeInterval = 0.15) {
+        guard autoAnnounce || UIAccessibility.isVoiceOverRunning else { return }
+        var text = "\(steps.count)단계 중 \(currentStep + 1)단계. \(step.title). \(step.description)"
         if step.isSettingsStep {
-            text += " Auto-Read Letters is \(autoAnnounce ? "on" : "off"). Dot Sound is \(activeBrailleSound ? "on" : "off")."
+            text += " 글자 자동 읽기는 \(autoAnnounce ? "켜짐" : "꺼짐")입니다. 점 위치 음성 안내는 \(activeBrailleSound ? "켜짐" : "꺼짐")입니다."
         }
-        UIAccessibility.post(notification: .announcement, argument: text)
+        BrailleSpeechManager.shared.speak(text, language: "ko-KR", delay: delay)
     }
 
     // MARK: - Navigation

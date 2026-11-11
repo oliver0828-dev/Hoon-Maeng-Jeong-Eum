@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct BrailleLandscapeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -37,7 +38,7 @@ struct BrailleLandscapeView: View {
     private let themeInkColor = Color(red: 1.0, green: 0.88, blue: 0.0)
     
     private var currentLetter: BrailleLetter {
-        letters.indices.contains(currentIndex) ? letters[currentIndex] : BrailleLetter(hangul: "?", englishName: "Error", cells: [[]])
+        letters.indices.contains(currentIndex) ? letters[currentIndex] : BrailleLetter(hangul: "?", englishName: "오류", cells: [[]])
     }
     
     private var totalCells: Int {
@@ -58,12 +59,24 @@ struct BrailleLandscapeView: View {
             let jamoDots = Array(currentLetter.cells[currentJamoIndex]).sorted()
             
             if jamoDots.isEmpty {
-                return "None"
+                return "없음"
             } else {
                 return jamoDots.map(String.init).joined(separator: ", ")
             }
         }
-        return "None"
+        return "없음"
+    }
+
+    private var isLastJamoOfLastWord: Bool {
+        (currentIndex == letters.count - 1) && (currentJamoIndex == currentLetter.cells.count - 1)
+    }
+
+    private var fullAnnouncementText: String {
+        let cellCount = currentLetter.cells.count
+        let cellText = cellCount > 1 ? ", \(cellCount)칸 중 \(currentJamoIndex + 1)번째 칸" : ""
+        let dots = brailleNumbersTextLandscape
+        let dotsAnnouncement = dots == "없음" ? "활성화된 점 없음" : "점자 번호: \(dots)"
+        return "\(currentLetter.englishName)\(cellText). \(dotsAnnouncement)"
     }
     
     private var currentFramesReady: Bool {
@@ -74,91 +87,132 @@ struct BrailleLandscapeView: View {
         GeometryReader { screen in
             let screenH = screen.size.height
             let isCompact = screenH < 400
-            let leftWidth: CGFloat = isCompact ? 160 : 240
+            let leftWidth: CGFloat = isCompact ? 200 : 250
             
-            let gridHeight = screenH * 0.72
-            let dotSize: CGFloat = min(gridHeight / 3.8, 90)
-            let dotSpacing: CGFloat = dotSize * 0.55
-            let arrowSize: CGFloat = 50
+            let gridHeight = screenH * 0.78
+            let dotSize: CGFloat = min(max(gridHeight / 3.4, 72), 104)
+            let dotSpacing: CGFloat = dotSize * 0.48
             
             ZStack {
                 mainPaperColor.ignoresSafeArea()
                 
-                HStack(spacing: 0) {
-                    // LEFT SIDE: Compact info panel
+                HStack(spacing: 12) {
+                    // LEFT SIDE: Tap-to-listen & Swipeable info panel
                     VStack(spacing: 0) {
-                        // Close button
                         HStack {
                             Button {
+                                BrailleSpeechManager.shared.stop()
                                 dismiss()
                             } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .resizable()
-                                    .frame(width: 30, height: 30)
-                                    .foregroundStyle(inkColor.opacity(0.3))
+                                HStack(spacing: 6) {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 16, weight: .bold))
+                                    koreanText("나가기")
+                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                }
+                                .foregroundStyle(inkColor.opacity(0.85))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(cardPaperColor))
                             }
-                            .accessibilityLabel("Close")
+                            .koreanAccessibilityLabel("학습 나가기")
+                            .koreanAccessibilityHint("현재 단계를 닫고 목록으로 돌아갑니다")
                             Spacer()
                         }
                         .padding(.leading, 12)
-                        .padding(.top)
+                        .padding(.top, 10)
                         
-                        Spacer(minLength: 0)
+                        Spacer(minLength: 4)
                         
-                        // All info grouped tightly
-                        VStack(spacing: isCompact ? 4 : 8) {
-                            Button {
-                                if !UIAccessibility.isVoiceOverRunning {
-                                    speakCurrentLetter()
-                                }
-                                HapticManager.instance.triggerTransitionHaptic()
-                            } label: {
-                                Image(systemName: "speaker.wave.3.fill")
-                                    .font(isCompact ? .body : .title3)
-                                    .foregroundStyle(inkColor)
-                                    .padding(8)
-                                    .background(Circle().fill(inkColor.opacity(0.05)))
-                            }
-                            .accessibilityLabel("Play pronunciation for \(currentLetter.hangul)")
-                            
-                            Text(currentLetter.hangul)
-                                .font(.system(size: isCompact ? 44 : 52, weight: .bold, design: .rounded))
+                        VStack(spacing: isCompact ? 6 : 10) {
+                            koreanText(currentLetter.hangul)
+                                .font(.system(size: isCompact ? 46 : 56, weight: .black, design: .rounded))
                                 .foregroundStyle(themeInkColor)
-                                .accessibilityLabel(currentLetter.hangul)
+                                .minimumScaleFactor(0.6)
+                                .lineLimit(1)
                             
                             if currentLetter.cells.count > 1 {
-                                Text("Page \(currentJamoIndex + 1) of \(currentLetter.cells.count)")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(inkColor.opacity(0.6))
+                                koreanText("\(currentLetter.cells.count)칸 중 \(currentJamoIndex + 1)칸")
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundStyle(mainPaperColor)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 3)
+                                    .background(Capsule().fill(themeInkColor))
                             }
                             
-                            Text(currentLetter.englishName)
-                                .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
-                                .foregroundStyle(inkColor.opacity(0.7))
+                            koreanText(currentLetter.englishName)
+                                .font(.system(size: isCompact ? 16 : 18, weight: .semibold, design: .rounded))
+                                .foregroundStyle(inkColor.opacity(0.85))
                             
                             VStack(alignment: .center, spacing: 2) {
-                                Text("Braille Numbers:\n\(brailleNumbersTextLandscape)")
-                                    .font(.system(size: isCompact ? 20 : 24, weight: .bold, design: .rounded))
+                                koreanText("점자 번호: \(brailleNumbersTextLandscape)")
+                                    .font(.system(size: isCompact ? 19 : 22, weight: .bold, design: .rounded))
                                     .foregroundColor(themeInkColor)
                                     .multilineTextAlignment(.center)
                             }
-                            .padding(.vertical, 6)
+                            .padding(.top, 2)
+
+                            koreanText("탭하여 다시 듣기")
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(inkColor.opacity(0.6))
+                                .padding(.top, 2)
                         }
                         .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22)
+                                .fill(cardPaperColor)
+                        )
+                        .padding(.horizontal, 10)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            HapticManager.instance.triggerTransitionHaptic()
+                            speakCurrentLetter(force: true)
+                        }
+                        .gesture(
+                            DragGesture(minimumDistance: 30)
+                                .onEnded { value in
+                                    handleHorizontalSwipe(value)
+                                }
+                        )
+                        .accessibilityElement(children: .ignore)
+                        .koreanAccessibilityLabel("\(fullAnnouncementText), 전체 \(totalCells)칸 중 \(totalProgress)번째 칸")
+                        .koreanAccessibilityHint("두 번 탭하면 음성을 다시 듣고, 위아래로 쓸어내리면 이전 또는 다음 점자 칸으로 이동합니다")
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAdjustableAction { direction in
+                            switch direction {
+                            case .increment:
+                                goToNextStep()
+                            case .decrement:
+                                goToPreviousStep()
+                            @unknown default:
+                                break
+                            }
+                        }
+                        .accessibilityAction(named: koreanText("다음 칸 또는 글자")) {
+                            goToNextStep()
+                        }
+                        .accessibilityAction(named: koreanText("이전 칸 또는 글자")) {
+                            goToPreviousStep()
+                        }
+                        .accessibilityAction(named: koreanText("다시 듣기")) {
+                            speakCurrentLetter(force: true)
+                        }
                         
-                        Spacer(minLength: 0)
+                        Spacer(minLength: 4)
                         
                         // Progress Bar
-                        VStack(spacing: 3) {
-                            Text("\(totalProgress) / \(totalCells)")
-                                .font(.system(size: isCompact ? 16 : 18, weight: .bold, design: .rounded))
+                        VStack(spacing: 4) {
+                            koreanText("\(totalProgress) / \(totalCells)")
+                                .font(.system(size: isCompact ? 15 : 17, weight: .bold, design: .rounded))
                                 .foregroundStyle(inkColor)
                                 .monospacedDigit()
                             
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
                                     RoundedRectangle(cornerRadius: 8)
-                                        .fill(inkColor.opacity(0.1))
+                                        .fill(inkColor.opacity(0.15))
                                         .frame(height: 6)
                                     
                                     RoundedRectangle(cornerRadius: 8)
@@ -170,40 +224,28 @@ struct BrailleLandscapeView: View {
                             }
                             .frame(height: 6)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 8)
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Progress: \(totalProgress) of \(totalCells)")
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 10)
+                        .accessibilityHidden(true)
                     }
                     .frame(width: leftWidth)
                     
-                    HStack(spacing: 0) {
-                        Button {
-                            if currentJamoIndex > 0 {
-                                withAnimation { currentJamoIndex -= 1 }
-                            } else if currentIndex > 0 {
-                                withAnimation {
-                                    currentIndex -= 1
-                                    currentJamoIndex = currentLetter.cells.count - 1
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "arrowshape.left.fill")
-                                .resizable().scaledToFit().frame(width: arrowSize, height: arrowSize)
-                                .foregroundStyle(themeInkColor.opacity((currentIndex == 0 && currentJamoIndex == 0) ? 0.2 : 1.0))
-                        }
-                        .disabled(currentIndex == 0 && currentJamoIndex == 0)
-                        .accessibilityLabel("Go back")
-                        .padding(.leading, 8)
-                        
-                        Spacer()
-                        
+                    // RIGHT SIDE: Large Braille Tactile Area + Swipe Bar
+                    VStack(spacing: 8) {
+                        Spacer(minLength: 4)
+
                         singleBrailleGrid(cellIndex: currentJamoIndex, dotSize: dotSize, dotSpacing: dotSpacing)
                             .id("\(currentIndex)-\(currentJamoIndex)")
+                            .padding(.horizontal, 28)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 28)
+                                    .fill(cardPaperColor)
+                            )
                             .coordinateSpace(name: "brailleLandscapeContainer")
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("Braille Display")
-                            .accessibilityHint("Drag your finger to feel the dots")
+                            .koreanAccessibilityLabel("점자 촉각 영역, \(fullAnnouncementText)")
+                            .koreanAccessibilityHint("한 손가락으로 문질러 1번부터 6번 점의 위치와 돌출 여부를 느끼고 들어보세요")
                             .accessibilityAddTraits(.allowsDirectInteraction)
                             .simultaneousGesture(
                                 DragGesture(minimumDistance: 0, coordinateSpace: .named("brailleLandscapeContainer"))
@@ -216,45 +258,50 @@ struct BrailleLandscapeView: View {
                                         currentlyTouchingDot = nil
                                     }
                             )
-                        
-                        Spacer()
-                        
-                        Button {
-                            if currentJamoIndex < currentLetter.cells.count - 1 {
-                                withAnimation { currentJamoIndex += 1 }
-                            } else if currentIndex < letters.count - 1 {
-                                withAnimation {
-                                    currentIndex += 1
-                                    currentJamoIndex = 0
-                                }
-                            } else {
-                                showCompletionScreen = true
-                            }
-                        } label: {
-                            let isLastJamoOfLastWord = (currentIndex == letters.count - 1) && (currentJamoIndex == currentLetter.cells.count - 1)
-                            Image(systemName: isLastJamoOfLastWord ? "checkmark.circle.fill" : "arrowshape.right.fill")
-                                .resizable().scaledToFit().frame(width: arrowSize, height: arrowSize)
-                                .foregroundStyle(themeInkColor)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "hand.draw.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                            koreanText(isLastJamoOfLastWord ? "왼쪽으로 스와이프하여 완료" : "좌우로 스와이프하여 다음·이전 칸 이동")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
                         }
-                        .accessibilityLabel(
-                            (currentIndex == letters.count - 1 && currentJamoIndex == currentLetter.cells.count - 1) ? "Complete" : "Go next"
+                        .foregroundStyle(inkColor.opacity(0.8))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            HapticManager.instance.triggerTransitionHaptic()
+                            speakCurrentLetter(force: true)
+                        }
+                        .gesture(
+                            DragGesture(minimumDistance: 30)
+                                .onEnded { value in
+                                    handleHorizontalSwipe(value)
+                                }
                         )
-                        .padding(.trailing, 8)
+                        .accessibilityHidden(true)
+
+                        Spacer(minLength: 4)
                     }
                     .frame(maxWidth: .infinity)
                 }
-
+            }
+        }
+        .accessibilityScrollAction { edge in
+            switch edge {
+            case .trailing, .bottom:
+                goToNextStep()
+            case .leading, .top:
+                goToPreviousStep()
+            @unknown default:
+                break
             }
         }
         .fullScreenCover(isPresented: $showTutorial) {
             TutorialIntroView(steps: [TutorialStep.courseIntro] + TutorialStep.landscapeTutorial) {
                 hasSeenLandscapeTutorial = true
                 showTutorial = false
-                if autoAnnounce {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        speakCurrentLetter()
-                    }
-                }
+                speakCurrentLetter(delay: 0.35)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -268,24 +315,21 @@ struct BrailleLandscapeView: View {
             let jamoCount = letters.indices.contains(newIndex) ? letters[newIndex].cells.count : 1
             let newJamo = savedJamo < jamoCount ? savedJamo : 0
 
-            let indexWillChange = newIndex != currentIndex
+            let stateWillChange = (newIndex != currentIndex) || (newJamo != currentJamoIndex)
             currentIndex = newIndex
             currentJamoIndex = newJamo
 
-            if !hasSpokenInitial && autoAnnounce && hasSeenLandscapeTutorial {
+            if !hasSpokenInitial && hasSeenLandscapeTutorial {
                 hasSpokenInitial = true
-                // If currentIndex changed, onChange(of: currentIndex) will already call speakCurrentLetter.
-                // Only schedule it here when the index stayed the same and onChange won't fire.
-                if !indexWillChange {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        speakCurrentLetter()
-                    }
+                if !stateWillChange {
+                    speakCurrentLetter(delay: 0.6)
                 }
             } else {
                 hasSpokenInitial = true
             }
         }
         .onDisappear {
+            BrailleSpeechManager.shared.stop()
             setOrientation(.portrait)
             UserDefaults.standard.set(currentIndex, forKey: progressKey)
             UserDefaults.standard.set(currentJamoIndex, forKey: jamoProgressKey)
@@ -296,13 +340,12 @@ struct BrailleLandscapeView: View {
             }
             dotFrames.removeAll()
             currentlyTouchingDot = nil
-            if autoAnnounce {
-                speakCurrentLetter()
-            }
+            speakCurrentLetter(delay: 0.1)
         }
         .onChange(of: currentJamoIndex) { _ in
             dotFrames.removeAll()
             currentlyTouchingDot = nil
+            speakCurrentLetter(delay: 0.1)
         }
         .navigationDestination(isPresented: $showCompletionScreen) {
             LevelCompletionView(
@@ -313,19 +356,58 @@ struct BrailleLandscapeView: View {
             .navigationBarBackButtonHidden(true)
         }
     }
-    
-    private func speakCurrentLetter() {
-        let cellCount = currentLetter.cells.count
 
-        BrailleSpeechManager.shared.speak(currentLetter.hangul, language: "ko-KR")
-
-        if cellCount > 1 {
-            BrailleSpeechManager.shared.speakQueued("Page \(currentJamoIndex + 1) of \(cellCount)", language: "en-US")
+    private func goToNextStep() {
+        HapticManager.instance.triggerTransitionHaptic()
+        if currentJamoIndex < currentLetter.cells.count - 1 {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                currentJamoIndex += 1
+            }
+        } else if currentIndex < letters.count - 1 {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                currentIndex += 1
+                currentJamoIndex = 0
+            }
+        } else {
+            HapticManager.instance.triggerCompletionHaptic()
+            showCompletionScreen = true
         }
+    }
 
-        let dots = brailleNumbersTextLandscape
-        let dotsAnnouncement = dots == "None" ? "No active dots" : "Braille Numbers: \(dots)"
-        BrailleSpeechManager.shared.speakQueued(dotsAnnouncement, language: "en-US")
+    private func goToPreviousStep() {
+        if currentJamoIndex > 0 {
+            HapticManager.instance.triggerTransitionHaptic()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                currentJamoIndex -= 1
+            }
+        } else if currentIndex > 0 {
+            HapticManager.instance.triggerTransitionHaptic()
+            let prevIndex = currentIndex - 1
+            let prevCellCount = letters.indices.contains(prevIndex) ? max(letters[prevIndex].cells.count - 1, 0) : 0
+            withAnimation(.easeInOut(duration: 0.25)) {
+                currentIndex = prevIndex
+                currentJamoIndex = prevCellCount
+            }
+        } else {
+            HapticManager.instance.triggerBoundaryHaptic()
+            BrailleSpeechManager.shared.speak("첫 번째 칸입니다. \(fullAnnouncementText)", language: "ko-KR")
+        }
+    }
+
+    private func handleHorizontalSwipe(_ value: DragGesture.Value) {
+        let horizontal = value.translation.width
+        let vertical = value.translation.height
+        guard abs(horizontal) > abs(vertical), abs(horizontal) > 40 else { return }
+        if horizontal < 0 {
+            goToNextStep()
+        } else {
+            goToPreviousStep()
+        }
+    }
+    
+    private func speakCurrentLetter(delay: TimeInterval = 0, force: Bool = false) {
+        guard autoAnnounce || force else { return }
+        BrailleSpeechManager.shared.speak(fullAnnouncementText, language: "ko-KR", delay: delay)
     }
     
     private func findNextLevel(after currentLevel: BrailleLevel) -> BrailleLevel? {
@@ -375,7 +457,7 @@ struct BrailleLandscapeView: View {
             }
         )
         .scaleEffect(isTouching ? 1.15 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isTouching)
+        .animation(.spring(response: 0.25, dampingFraction: 0.65), value: isTouching)
         .onPreferenceChange(DotFramePreferenceKey.self) { preferences in
             for (key, frame) in preferences {
                 dotFrames[key] = frame
@@ -385,7 +467,7 @@ struct BrailleLandscapeView: View {
     
     private func detectTouch(at location: CGPoint) {
         var foundDotID: String? = nil
-        let touchRadius: CGFloat = 15.0
+        let touchRadius: CGFloat = 18.0
         
         for dotNum in 1...6 {
             let id = "\(currentJamoIndex)-\(dotNum)"
@@ -397,6 +479,7 @@ struct BrailleLandscapeView: View {
         }
         
         if foundDotID != currentlyTouchingDot {
+            let previousDot = currentlyTouchingDot
             currentlyTouchingDot = foundDotID
             if let id = foundDotID {
                 let comps = id.split(separator: "-").compactMap { Int($0) }
@@ -404,18 +487,24 @@ struct BrailleLandscapeView: View {
                     let cellIdx = comps[0]
                     let dotNum = comps[1]
                     if currentLetter.cells.indices.contains(cellIdx) {
-                        if currentLetter.cells[cellIdx].contains(dotNum) {
+                        let isActive = currentLetter.cells[cellIdx].contains(dotNum)
+                        if isActive {
                             HapticManager.instance.triggerActiveHaptic()
-                            if activeBrailleSound {
-                                SoundManager.instance.playDing()
-                            }
                         } else {
                             HapticManager.instance.triggerInactiveHaptic()
                         }
-                    } else {
-                        HapticManager.instance.triggerInactiveHaptic()
+                        if activeBrailleSound {
+                            BrailleSpeechManager.shared.speakDot(
+                                dotNumber: dotNum,
+                                isActive: isActive,
+                                cellIndex: nil,
+                                totalCells: 1
+                            )
+                        }
                     }
                 }
+            } else if previousDot != nil {
+                HapticManager.instance.triggerBoundaryHaptic()
             }
         }
     }

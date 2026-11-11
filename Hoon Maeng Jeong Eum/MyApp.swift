@@ -61,12 +61,12 @@ struct Braille_Read_1App: App {
                 TabView {
                     LearnTab
                         .tabItem {
-                            Label("Learn", systemImage: "book.fill")
+                            Label { koreanText("학습") } icon: { Image(systemName: "book.fill") }
                         }
                     
                     SettingsView()
                         .tabItem {
-                            Label("Settings", systemImage: "gearshape.fill")
+                            Label { koreanText("설정") } icon: { Image(systemName: "gearshape.fill") }
                         }
                 }
                 .tint(themeInkColor)
@@ -91,7 +91,7 @@ struct Braille_Read_1App: App {
             NavigationStack(path: $viewModel.path) {
                 contentView
                     .background(mainBackgroundColor)
-                    .navigationTitle("Learn")
+                    .navigationTitle(koreanText("학습"))
                     .navigationBarTitleDisplayMode(.large)
                     .fontDesign(.rounded)
                     .navigationDestination(for: Path.self) { path in
@@ -113,7 +113,7 @@ struct Braille_Read_1App: App {
                     .background(mainBackgroundColor)
                     .toolbar {
                         ToolbarItem(placement: .principal) {
-                            Text("Learn")
+                            koreanText("학습")
                                 .font(.system(.title2, design: .rounded, weight: .bold))
                                 .foregroundStyle(inkColor)
                         }
@@ -134,11 +134,12 @@ struct Braille_Read_1App: App {
                 
                 ForEach(sections) { section in
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(section.title)
+                        koreanText(section.title)
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundStyle(inkColor)
                             .padding(.horizontal)
+                            .accessibilityAddTraits(.isHeader)
                         
                         ForEach(section.levels) { level in
                             CardView(level: level)
@@ -154,11 +155,13 @@ struct Braille_Read_1App: App {
         HStack(spacing: 0) {
             ForEach(BrailleType.allCases, id: \.self) { type in
                 Button {
+                    HapticManager.instance.triggerTransitionHaptic()
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedTypeRaw = type.rawValue
                     }
+                    BrailleSpeechManager.shared.speak("\(type.displayName) \(type.subtitle) 과정 선택됨", language: "ko-KR", delay: 0.15)
                 } label: {
-                    Text(type.displayName)
+                    koreanText("\(type.displayName) (\(type.subtitle))")
                         .font(.subheadline)
                         .fontWeight(activeBrailleType == type ? .bold : .medium)
                         .foregroundStyle(activeBrailleType == type ? .black : inkColor.opacity(0.6))
@@ -172,7 +175,8 @@ struct Braille_Read_1App: App {
                         .clipShape(Capsule())
                 }
                 .buttonStyle(PlainButtonStyle())
-                .accessibilityLabel(type.displayName)
+                .koreanAccessibilityLabel("\(type.displayName), \(type.subtitle)")
+                .koreanAccessibilityHint("두 번 탭하여 \(type.displayName) \(type.subtitle) 과정으로 전환합니다")
                 .accessibilityAddTraits(activeBrailleType == type ? .isSelected : [])
             }
         }

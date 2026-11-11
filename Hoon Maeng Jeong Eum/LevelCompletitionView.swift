@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import Combine
 
 enum Path: Hashable, Equatable {
     case level(BrailleLevel)
@@ -63,41 +64,50 @@ struct LevelCompletionView: View {
             VStack(spacing: 40) {
                 Spacer()
                 
-                Text(levelTitle)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(inkColor)
-                    .padding()
-                
-                ZStack {
-                    Circle()
-                        .stroke(cardPaperColor, lineWidth: 20)
-                        .frame(width: 200, height: 200)
-                        .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
+                VStack(spacing: 28) {
+                    koreanText(levelTitle)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(inkColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                     
-                    Circle()
-                        .trim(from: 0, to: animateCircle ? 1.0 : 0)
-                        .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round))
-                        .foregroundStyle(themeInkColor)
-                        .frame(width: 200, height: 200)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.easeOut(duration: 1.5), value: animateCircle)
-                    
-                    VStack {
-                        Text("100%")
-                            .font(.system(size: 50, weight: .black, design: .rounded))
-                            .foregroundStyle(themeInkColor)
+                    ZStack {
+                        Circle()
+                            .stroke(cardPaperColor, lineWidth: 20)
+                            .frame(width: 200, height: 200)
+                            .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
                         
-                        Text("Completed")
-                            .font(.headline)
-                            .foregroundStyle(inkColor.opacity(0.6))
+                        Circle()
+                            .trim(from: 0, to: animateCircle ? 1.0 : 0)
+                            .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                            .foregroundStyle(themeInkColor)
+                            .frame(width: 200, height: 200)
+                            .rotationEffect(.degrees(-90))
+                            .animation(.easeOut(duration: 1.5), value: animateCircle)
+                        
+                        VStack {
+                            koreanText("100%")
+                                .font(.system(size: 50, weight: .black, design: .rounded))
+                                .foregroundStyle(themeInkColor)
+                            
+                            koreanText("완료")
+                                .font(.headline)
+                                .foregroundStyle(inkColor.opacity(0.6))
+                        }
                     }
+                }
+                .accessibilityElement(children: .ignore)
+                .koreanAccessibilityLabel("축하합니다! \(levelTitle) 100퍼센트 완료")
+                .koreanAccessibilityHint("탭하면 완료 안내 음성을 다시 듣습니다")
+                .onTapGesture {
+                    announceCompletion(force: true)
                 }
                 
                 Spacer()
                 
                 VStack(spacing: 15) {
                     if showGrade2Advancement {
-                        Text("You've completed Grade 1!")
+                        koreanText("1급 과정을 모두 완료했습니다!")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundStyle(themeInkColor)
@@ -108,7 +118,7 @@ struct LevelCompletionView: View {
                             selectedType = BrailleType.yakja.rawValue
                             viewModel.reset()
                         } label: {
-                            Text("Advance to Grade 2")
+                            koreanText("2급 과정으로 이동")
                                 .font(.title3).fontWeight(.bold)
                                 .foregroundColor(.black)
                                 .frame(maxWidth: .infinity).frame(height: 60)
@@ -116,12 +126,14 @@ struct LevelCompletionView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 5)
                         }
+                        .koreanAccessibilityLabel("2급 과정으로 이동")
+                        .koreanAccessibilityHint("약자 점자 학습 과정으로 전환합니다")
 
                         Button {
                             saveProgress()
                             viewModel.reset()
                         } label: {
-                            Text("Return Home")
+                            koreanText("홈으로 돌아가기")
                                 .font(.title3).fontWeight(.bold)
                                 .foregroundColor(themeInkColor)
                                 .frame(maxWidth: .infinity).frame(height: 60)
@@ -129,10 +141,12 @@ struct LevelCompletionView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 5)
                         }
+                        .koreanAccessibilityLabel("홈으로 돌아가기")
+                        .koreanAccessibilityHint("학습 목록 화면으로 돌아갑니다")
                     } else {
                         if let next = nextLevel {
                             if isNextLevelCompleted {
-                                Text("You have already finished the next level!")
+                                koreanText("다음 단계를 이미 완료했습니다!")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(themeInkColor)
@@ -142,7 +156,7 @@ struct LevelCompletionView: View {
                                     saveProgress()
                                     viewModel.replace(next)
                                 } label: {
-                                    Text("Next Level")
+                                    koreanText("다음 단계")
                                         .font(.title3).fontWeight(.bold)
                                         .foregroundColor(.black)
                                         .frame(maxWidth: .infinity).frame(height: 60)
@@ -150,6 +164,8 @@ struct LevelCompletionView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 20))
                                         .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 5)
                                 }
+                                .koreanAccessibilityLabel("다음 단계: \(next.title)")
+                                .koreanAccessibilityHint("두 번 탭하여 다음 단계 학습을 시작합니다")
                             }
                         }
 
@@ -157,7 +173,7 @@ struct LevelCompletionView: View {
                             saveProgress()
                             viewModel.reset()
                         } label: {
-                            Text("Return Home")
+                            koreanText("홈으로 돌아가기")
                                 .font(.title3).fontWeight(.bold)
                                 .foregroundColor((nextLevel != nil && !isNextLevelCompleted) ? themeInkColor : .black)
                                 .frame(maxWidth: .infinity).frame(height: 60)
@@ -165,6 +181,8 @@ struct LevelCompletionView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 5)
                         }
+                        .koreanAccessibilityLabel("홈으로 돌아가기")
+                        .koreanAccessibilityHint("학습 목록 화면으로 돌아갑니다")
                     }
                 }
                 .padding(.horizontal, 40)
@@ -174,14 +192,33 @@ struct LevelCompletionView: View {
             if showConfetti {
                 ConfettiView()
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         }
         .onAppear {
             saveProgress()
             animateCircle = true
             showConfetti = true
+            announceCompletion(delay: 0.35)
+        }
+        .onDisappear {
+            BrailleSpeechManager.shared.stop()
         }
         .navigationBarBackButtonHidden(true)
+    }
+
+    private func announceCompletion(delay: TimeInterval = 0, force: Bool = false) {
+        let autoAnnounce = UserDefaults.standard.object(forKey: "autoAnnounce") as? Bool ?? true
+        guard autoAnnounce || force else { return }
+        var message = "축하합니다! \(levelTitle) 학습을 완료했습니다."
+        if showGrade2Advancement {
+            message += " 1급 과정을 모두 마쳤습니다. 2급 과정으로 이동하거나 홈으로 돌아갈 수 있습니다."
+        } else if let next = nextLevel, !isNextLevelCompleted {
+            message += " 다음 단계인 \(next.title)로 이동하거나 홈으로 돌아갈 수 있습니다."
+        } else {
+            message += " 홈으로 돌아가기 버튼을 눌러 목록으로 이동하세요."
+        }
+        BrailleSpeechManager.shared.speak(message, language: "ko-KR", delay: delay)
     }
     
     private func saveProgress() {
@@ -216,7 +253,7 @@ struct ConfettiView: View {
             ZStack {
                 ForEach(0..<pieces.count, id: \.self) { i in
                     let piece = pieces[i]
-                    Text(piece.emoji)
+                    koreanText(piece.emoji)
                         .font(.system(size: piece.size))
                         .position(
                             x: piece.xFraction * geo.size.width,

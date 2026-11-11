@@ -35,38 +35,42 @@ struct SettingsView: View {
             Section {
                 Toggle(isOn: $autoAnnounce) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Auto-Announce Letters")
+                        koreanText("글자 자동 읽기")
                             .font(.body)
                             .fontWeight(.semibold)
                             .foregroundStyle(inkColor)
-                        Text("Automatically speak the letter when it appears on screen")
+                        koreanText("화면에 글자가 나타나면 자동으로 읽어 줍니다")
                             .font(.caption)
                             .foregroundStyle(inkColor.opacity(0.6))
                     }
                 }
+                .koreanAccessibilityLabel("글자 자동 읽기")
+                .koreanAccessibilityHint("화면에 글자가 나타나면 자동으로 읽어 줍니다")
                 .tint(themeInkColor)
                 .listRowBackground(Color(white: 0.12))
 
                 Toggle(isOn: $activeBrailleSound) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Active Braille Sound")
+                        koreanText("점자 위치 음성 안내")
                             .font(.body)
                             .fontWeight(.semibold)
                             .foregroundStyle(inkColor)
-                        Text("Play a sound when touching an active dot")
+                        koreanText("점을 만질 때 몇 번 점인지와 돌출 여부를 음성으로 알려 줍니다")
                             .font(.caption)
                             .foregroundStyle(inkColor.opacity(0.6))
                     }
                 }
+                .koreanAccessibilityLabel("점자 위치 음성 안내")
+                .koreanAccessibilityHint("점을 만질 때 몇 번 점인지와 돌출 여부를 음성으로 알려 줍니다")
                 .tint(themeInkColor)
                 .listRowBackground(Color(white: 0.12))
             } header: {
-                Text("Sound")
+                koreanText("음성 및 촉각 안내")
             }
         }
         .scrollContentBackground(.hidden)
         .background(mainPaperColor)
-        .navigationTitle("Settings")
+        .navigationTitle(koreanText("설정"))
         .navigationBarTitleDisplayMode(.large)
     }
 }

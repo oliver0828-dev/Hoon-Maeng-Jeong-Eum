@@ -8,6 +8,7 @@
 import SwiftUI
 import AVFoundation
 import AVKit
+import UIKit
 
 struct BraillePortraitView: View {
     @EnvironmentObject var viewModel: ContentViewModel
@@ -22,7 +23,6 @@ struct BraillePortraitView: View {
 
     @State private var currentIndex: Int = 0
     @State private var showCompletionScreen: Bool = false
-    @State private var hasAnnouncedCurrentLetter: Bool = false
     @AppStorage("selected_braille_type") private var selectedBrailleType: String = BrailleType.jeongja.rawValue
     @AppStorage("hasSeenGrade1PortraitTutorial") private var hasSeenGrade1Tutorial: Bool = false
     @AppStorage("hasSeenGrade2PortraitTutorial") private var hasSeenGrade2Tutorial: Bool = false
@@ -45,7 +45,7 @@ struct BraillePortraitView: View {
     
     private var currentLetter: BrailleLetter {
         if letters.isEmpty {
-            return BrailleLetter(hangul: "?", englishName: "Error", activeDots: [])
+            return BrailleLetter(hangul: "?", englishName: "오류", activeDots: [])
         }
       
         if currentIndex < letters.count {
@@ -64,12 +64,16 @@ struct BraillePortraitView: View {
         let uniqueDots = Array(Set(allActiveDots)).sorted()
         
         if uniqueDots.isEmpty {
-            return "No active dots"
+            return "활성화된 점 없음"
         } else if uniqueDots.count == 1 {
-            return "Braille Number: \(uniqueDots.first!)"
+            return "점자 번호: \(uniqueDots.first!)"
         } else {
-            return "Braille Numbers: \(uniqueDots.map(String.init).joined(separator: ", "))"
+            return "점자 번호: \(uniqueDots.map(String.init).joined(separator: ", "))"
         }
+    }
+
+    private var fullAnnouncementText: String {
+        "\(currentLetter.englishName). \(brailleNumbersText). 전체 \(letters.count)개 중 \(currentIndex + 1)번째 글자"
     }
     
     @State private var dotFrames: [String: CGRect] = [:]
@@ -80,87 +84,75 @@ struct BraillePortraitView: View {
             mainPaperColor
                 .ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                headerSection
-                
-                Spacer()
-                    .frame(maxHeight: 20)
+            VStack(spacing: 14) {
+                headerInfoCard
                 
                 ZStack {
                     RoundedRectangle(cornerRadius: 30)
                         .fill(cardPaperColor)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
                         .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 8)
                     
-                    VStack {
-                        HStack {
-                            Button {
-                                if !UIAccessibility.isVoiceOverRunning {
-                                    BrailleSpeechManager.shared.speak(currentLetter.hangul, language: "ko-KR")
-                                    BrailleSpeechManager.shared.speakQueued(brailleNumbersText, language: "en-US")
-                                }
-                                HapticManager.instance.triggerTransitionHaptic()
-                            } label: {
-                                Image(systemName: "speaker.wave.3.fill")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 44, height: 44)
-                                    .foregroundStyle(inkColor)
-                                    .padding(12)
-                            }
-                            .accessibilityLabel("\(currentLetter.hangul)")
-                            .padding(.leading, 8)
+                    VStack(spacing: 18) {
+                        Spacer(minLength: 4)
+                        
+                        GeometryReader { geo in
+                            let availableW = geo.size.width
+                            let availableH = geo.size.height
+                            let cellCount = max(currentCells.count, 1)
+                            let maxDotH = (availableH - 96) / 3.0
+                            let maxDotW = (availableW - CGFloat(cellCount - 1) * 32 - 56) / CGFloat(cellCount * 2)
+                            let dotSize = min(max(min(maxDotH, maxDotW), 76), 112)
+                            let hSpacing = min(max(dotSize * 0.48, 36), 56)
+                            let vSpacing = min(max((availableH - dotSize * 3) / 2.6, 28), 48)
                             
-                            Spacer()
-                        }
-                        
-                        Spacer()
-                            .frame(maxHeight: 10)
-                        
-                        VStack(spacing: 30) {
-                            HStack(spacing: 40) {
+                            HStack(spacing: 32) {
                                 ForEach(0..<currentCells.count, id: \.self) { cellIndex in
-                                    singleBrailleGrid(cellIndex: cellIndex)
+                                    singleBrailleGrid(
+                                        cellIndex: cellIndex,
+                                        dotSize: dotSize,
+                                        hSpacing: hSpacing,
+                                        vSpacing: vSpacing
+                                    )
                                 }
                             }
-                            .coordinateSpace(name: "brailleContainer")
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("Braille Display")
-                            .accessibilityHint("Drag your finger to feel the dots")
-                            .accessibilityAddTraits(.allowsDirectInteraction)
-                            .gesture(
-                                DragGesture(minimumDistance: 0, coordinateSpace: .named("brailleContainer"))
-                                    .onChanged { value in
-                                        detectTouch(at: value.location)
-                                    }
-                                    .onEnded { _ in
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                        .coordinateSpace(name: "brailleContainer")
+                        .accessibilityElement(children: .ignore)
+                        .koreanAccessibilityLabel("점자 촉각 영역, \(currentLetter.englishName), \(brailleNumbersText)")
+                        .koreanAccessibilityHint("한 손가락으로 문질러 1번부터 6번 점의 위치와 돌출 여부를 느끼고 들어보세요")
+                        .accessibilityAddTraits(.allowsDirectInteraction)
+                        .gesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .named("brailleContainer"))
+                                .onChanged { value in
+                                    detectTouch(at: value.location)
+                                }
+                                .onEnded { _ in
+                                    if currentlyTouchingDot != nil {
                                         currentlyTouchingDot = nil
                                     }
-                            )
-                            
-                            // Braille Numbers Label
-                            Text(brailleNumbersText)
-                                .font(.system(size: 25, weight: .semibold, design: .rounded))
-                                .foregroundColor(themeInkColor)
-                        }
-                        .padding(.bottom, 30)
-                        .animation(.easeInOut, value: currentCells.count)
+                                }
+                        )
                         
-                        RoundedRectangle(cornerRadius: 20)
-                            .frame(height: 2)
-                            .foregroundStyle(inkColor.opacity(0.1))
-                        
-                        swipeButtonLetter
-                        
-                        Spacer()
-                            .frame(maxHeight: 15)
+                        swipeGuideFooter
                     }
+                    .padding(.vertical, 14)
                 }
-                .frame(maxWidth: 360)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 30)
+                .frame(maxWidth: 370)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
-
+        }
+        .accessibilityScrollAction { edge in
+            switch edge {
+            case .trailing, .bottom:
+                goToNextLetter()
+            case .leading, .top:
+                goToPreviousLetter()
+            @unknown default:
+                break
+            }
         }
         .fullScreenCover(isPresented: $showTutorial) {
             TutorialIntroView(steps: [TutorialStep.courseIntro] + TutorialStep.portraitTutorial + [TutorialStep.voiceOverTip, TutorialStep.settingsStep]) {
@@ -170,12 +162,7 @@ struct BraillePortraitView: View {
                     hasSeenGrade1Tutorial = true
                 }
                 showTutorial = false
-                if autoAnnounce {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        BrailleSpeechManager.shared.speak(currentLetter.hangul, language: "ko-KR")
-                        BrailleSpeechManager.shared.speakQueued(brailleNumbersText, language: "en-US")
-                    }
-                }
+                announceCurrentLetter(delay: 0.35)
             }
         }
         .toolbar(.hidden, for: .tabBar)
@@ -183,30 +170,21 @@ struct BraillePortraitView: View {
         .onAppear {
             let saved = UserDefaults.standard.integer(forKey: progressKey)
             currentIndex = letters.indices.contains(saved) ? saved : 0
-            if autoAnnounce && hasSeenCurrentGradeTutorial {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    BrailleSpeechManager.shared.speak(currentLetter.hangul, language: "ko-KR")
-                    BrailleSpeechManager.shared.speakQueued(brailleNumbersText, language: "en-US")
-                }
+            if hasSeenCurrentGradeTutorial {
+                announceCurrentLetter(delay: 0.45)
             }
-            hasAnnouncedCurrentLetter = true
         }
         .onDisappear {
+            BrailleSpeechManager.shared.stop()
             UserDefaults.standard.set(currentIndex, forKey: progressKey)
         }
-      
         .onChange(of: currentIndex) { _ in
-            if autoAnnounce {
-                BrailleSpeechManager.shared.speak(currentLetter.hangul, language: "ko-KR")
-                BrailleSpeechManager.shared.speakQueued(brailleNumbersText, language: "en-US")
-            }
-            hasAnnouncedCurrentLetter = true
+            currentlyTouchingDot = nil
+            announceCurrentLetter(delay: 0.1)
         }
-      
         .onChange(of: currentCells.count) { _ in
             dotFrames.removeAll()
         }
-       
         .navigationDestination(isPresented: $showCompletionScreen) {
             LevelCompletionView(
                 levelTitle: levelTitle,
@@ -214,6 +192,35 @@ struct BraillePortraitView: View {
                 showGrade2Advancement: level.storageKey == "sec3_lvl1_completed"
             )
             .navigationBarBackButtonHidden(true)
+        }
+    }
+
+    private func announceCurrentLetter(delay: TimeInterval = 0, force: Bool = false) {
+        guard autoAnnounce || force else { return }
+        BrailleSpeechManager.shared.speak(fullAnnouncementText, language: "ko-KR", delay: delay)
+    }
+
+    private func goToNextLetter() {
+        HapticManager.instance.triggerTransitionHaptic()
+        if currentIndex < letters.count - 1 {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                currentIndex += 1
+            }
+        } else {
+            HapticManager.instance.triggerCompletionHaptic()
+            showCompletionScreen = true
+        }
+    }
+
+    private func goToPreviousLetter() {
+        if currentIndex > 0 {
+            HapticManager.instance.triggerTransitionHaptic()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                currentIndex -= 1
+            }
+        } else {
+            HapticManager.instance.triggerBoundaryHaptic()
+            BrailleSpeechManager.shared.speak("첫 번째 글자입니다. \(fullAnnouncementText)", language: "ko-KR")
         }
     }
     
@@ -228,34 +235,42 @@ struct BraillePortraitView: View {
         return nil
     }
     
-    
-    
-    private var headerSection: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Spacer()
+    private var headerInfoCard: some View {
+        VStack(spacing: 10) {
+            HStack(alignment: .center, spacing: 14) {
+                koreanText(currentLetter.hangul)
+                    .font(.system(size: 44, weight: .black, design: .rounded))
+                    .foregroundStyle(themeInkColor)
 
-                ZStack {
-                    RoundedRectangle(cornerRadius: 150)
-                        .fill(inkColor)
-                        .frame(width: 120, height: 35)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        koreanText(currentLetter.englishName)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(inkColor)
 
-                    Text("\(currentIndex + 1) / \(letters.count)")
+                        Spacer()
+
+                        koreanText("\(currentIndex + 1) / \(letters.count)")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(mainPaperColor)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(inkColor))
+                            .monospacedDigit()
+                    }
+
+                    koreanText(brailleNumbersText)
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        .foregroundStyle(mainPaperColor)
-                        .monospacedDigit()
+                        .foregroundStyle(themeInkColor.opacity(0.9))
                 }
-
-                Spacer()
             }
-            .frame(maxWidth: 340)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 8)
-            
+            .padding(.horizontal, 20)
+            .padding(.top, 14)
+
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(inkColor.opacity(0.1))
+                        .fill(inkColor.opacity(0.15))
                         .frame(height: 6)
                     
                     RoundedRectangle(cornerRadius: 3)
@@ -263,86 +278,116 @@ struct BraillePortraitView: View {
                         .frame(width: geometry.size.width * (CGFloat(currentIndex + 1) / CGFloat(max(letters.count, 1))), height: 6)
                         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: currentIndex)
                 }
-                .frame(maxWidth: 340)
-                .frame(maxWidth: .infinity)
             }
             .frame(height: 6)
-            .frame(maxWidth: 340)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(cardPaperColor)
+        )
+        .frame(maxWidth: 370)
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            HapticManager.instance.triggerTransitionHaptic()
+            announceCurrentLetter(force: true)
+        }
+        .gesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    handleHorizontalSwipe(value)
+                }
+        )
+        .accessibilityElement(children: .ignore)
+        .koreanAccessibilityLabel("\(currentLetter.englishName), \(brailleNumbersText), 전체 \(letters.count)개 중 \(currentIndex + 1)번째 글자")
+        .koreanAccessibilityHint("두 번 탭하면 음성을 다시 듣고, 위아래로 쓸어내리면 이전 또는 다음 글자로 이동합니다")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                goToNextLetter()
+            case .decrement:
+                goToPreviousLetter()
+            @unknown default:
+                break
+            }
+        }
+        .accessibilityAction(named: koreanText("다음 점자")) {
+            goToNextLetter()
+        }
+        .accessibilityAction(named: koreanText("이전 점자")) {
+            goToPreviousLetter()
+        }
+        .accessibilityAction(named: koreanText("다시 듣기")) {
+            announceCurrentLetter(force: true)
+        }
+    }
+    
+    private func singleBrailleGrid(cellIndex: Int, dotSize: CGFloat, hSpacing: CGFloat, vSpacing: CGFloat) -> some View {
+        Grid(horizontalSpacing: hSpacing, verticalSpacing: vSpacing) {
+            GridRow {
+                dotView(cellIndex: cellIndex, number: 1, dotSize: dotSize)
+                dotView(cellIndex: cellIndex, number: 4, dotSize: dotSize)
+            }
+            GridRow {
+                dotView(cellIndex: cellIndex, number: 2, dotSize: dotSize)
+                dotView(cellIndex: cellIndex, number: 5, dotSize: dotSize)
+            }
+            GridRow {
+                dotView(cellIndex: cellIndex, number: 3, dotSize: dotSize)
+                dotView(cellIndex: cellIndex, number: 6, dotSize: dotSize)
+            }
+        }
+    }
+    
+    private var swipeGuideFooter: some View {
+        VStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 20)
+                .frame(height: 2)
+                .foregroundStyle(inkColor.opacity(0.12))
+                .padding(.horizontal, 20)
+
+            HStack(spacing: 10) {
+                Image(systemName: "hand.draw.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                koreanText(currentIndex < letters.count - 1 ? "좌우로 스와이프하여 이동 · 탭하여 다시 듣기" : "왼쪽으로 스와이프하여 완료 · 탭하여 다시 듣기")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundStyle(inkColor.opacity(0.8))
             .frame(maxWidth: .infinity)
-        }
-    }
-    
-    private func singleBrailleGrid(cellIndex: Int) -> some View {
-        Grid(horizontalSpacing: 50, verticalSpacing: 50) {
-            GridRow {
-                dotView(cellIndex: cellIndex, number: 1)
-                dotView(cellIndex: cellIndex, number: 4)
-            }
-            GridRow {
-                dotView(cellIndex: cellIndex, number: 2)
-                dotView(cellIndex: cellIndex, number: 5)
-            }
-            GridRow {
-                dotView(cellIndex: cellIndex, number: 3)
-                dotView(cellIndex: cellIndex, number: 6)
-            }
-        }
-    }
-    
-    private var swipeButtonLetter: some View {
-        HStack(spacing: 8) {
-            Button {
-                if currentIndex > 0 {
-                    HapticManager.instance.triggerTransitionHaptic()
-                    withAnimation {
-                        currentIndex -= 1
-                    }
-                }
-            } label: {
-                Image(systemName: "arrowshape.left.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 70, height: 70)
-            }
-            .disabled(currentIndex == 0)
-            .opacity(currentIndex == 0 ? 0.3 : 1.0)
-            .accessibilityLabel("Go back")
-            
-            Spacer()
-            
-            VStack {
-                Text(currentLetter.hangul)
-                Text(currentLetter.englishName)
-            }
-            .font(.title)
-            .fontWeight(.bold)
-            .frame(minWidth: 120)
-            
-            Spacer()
-            
-            Button {
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .contentShape(Rectangle())
+            .onTapGesture {
                 HapticManager.instance.triggerTransitionHaptic()
-                
-                if currentIndex < letters.count - 1 {
-                    withAnimation {
-                        currentIndex += 1
-                    }
-                } else {
-                    showCompletionScreen = true
-                }
-            } label: {
-                Image(systemName: currentIndex < letters.count - 1 ? "arrowshape.right.fill" : "checkmark.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 70, height: 70)
+                announceCurrentLetter(force: true)
             }
-            .accessibilityLabel(currentIndex < letters.count - 1 ? "Go next" : "Complete")
+            .gesture(
+                DragGesture(minimumDistance: 30)
+                    .onEnded { value in
+                        handleHorizontalSwipe(value)
+                    }
+            )
+            .accessibilityHidden(true)
         }
-        .frame(width: 340)
-        .foregroundStyle(themeInkColor)
+    }
+
+    private func handleHorizontalSwipe(_ value: DragGesture.Value) {
+        let horizontal = value.translation.width
+        let vertical = value.translation.height
+        guard abs(horizontal) > abs(vertical), abs(horizontal) > 40 else { return }
+        if horizontal < 0 {
+            goToNextLetter()
+        } else {
+            goToPreviousLetter()
+        }
     }
     
-    private func dotView(cellIndex: Int, number: Int) -> some View {
+    private func dotView(cellIndex: Int, number: Int, dotSize: CGFloat) -> some View {
         let isActive = currentCells[cellIndex].contains(number)
         let dotID = "\(cellIndex)-\(number)"
         let isTouching = (currentlyTouchingDot == dotID)
@@ -353,12 +398,11 @@ struct BraillePortraitView: View {
             paperColor: cardPaperColor,
             dotNumber: number
         )
-        .frame(width: 90, height: 90)
+        .frame(width: dotSize, height: dotSize)
         .overlay(
             GeometryReader { geo in
                 Color.clear
-                    .task {
-                     
+                    .onAppear {
                         dotFrames[dotID] = geo.frame(in: .named("brailleContainer"))
                     }
                     .onChange(of: geo.frame(in: .named("brailleContainer"))) { newFrame in
@@ -367,44 +411,49 @@ struct BraillePortraitView: View {
             }
         )
         .scaleEffect(isTouching ? 1.15 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isTouching)
+        .animation(.spring(response: 0.25, dampingFraction: 0.65), value: isTouching)
     }
     
     private func detectTouch(at location: CGPoint) {
         var foundDotID: String? = nil
         
         for (id, frame) in dotFrames {
-            if frame.insetBy(dx: -15, dy: -15).contains(location) {
+            if frame.insetBy(dx: -18, dy: -18).contains(location) {
                 foundDotID = id
                 break
             }
         }
         
         if foundDotID != currentlyTouchingDot {
+            let previousDot = currentlyTouchingDot
             currentlyTouchingDot = foundDotID
             
             if let id = foundDotID {
-               
                 let components = id.split(separator: "-").compactMap { Int($0) }
                 
                 if components.count == 2 {
                     let cellIndex = components[0]
                     let dotNumber = components[1]
                     
-                
                     if currentCells.indices.contains(cellIndex) {
-                        if currentCells[cellIndex].contains(dotNumber) {
+                        let isActive = currentCells[cellIndex].contains(dotNumber)
+                        if isActive {
                             HapticManager.instance.triggerActiveHaptic()
-                            if activeBrailleSound {
-                                SoundManager.instance.playDing()
-                            }
                         } else {
                             HapticManager.instance.triggerInactiveHaptic()
                         }
-                    } else {
-                        HapticManager.instance.triggerInactiveHaptic()
+                        if activeBrailleSound {
+                            BrailleSpeechManager.shared.speakDot(
+                                dotNumber: dotNumber,
+                                isActive: isActive,
+                                cellIndex: cellIndex,
+                                totalCells: currentCells.count
+                            )
+                        }
                     }
                 }
+            } else if previousDot != nil {
+                HapticManager.instance.triggerBoundaryHaptic()
             }
         }
     }
@@ -423,19 +472,28 @@ struct NewDotView: View {
             if isActive {
                 Circle()
                     .fill(activeColor)
+                    .shadow(color: activeColor.opacity(isTouching ? 0.6 : 0.25), radius: isTouching ? 12 : 4)
 
-                Text("\(dotNumber)")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                Circle()
+                    .strokeBorder(isTouching ? Color.white : Color.black.opacity(0.25), lineWidth: isTouching ? 5 : 2)
+
+                koreanText("\(dotNumber)")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundColor(.black)
             } else {
                 Circle()
                     .fill(Color(white: 0.2))
 
-                Text("\(dotNumber)")
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                    .foregroundColor(Color(white: 0.45))
+                Circle()
+                    .strokeBorder(
+                        isTouching ? activeColor.opacity(0.85) : Color(white: 0.35),
+                        style: StrokeStyle(lineWidth: isTouching ? 4 : 2, dash: isTouching ? [] : [6, 4])
+                    )
+
+                koreanText("\(dotNumber)")
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    .foregroundColor(isTouching ? activeColor : Color(white: 0.5))
             }
         }
     }
 }
-
